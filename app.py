@@ -21,8 +21,20 @@ loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 all_voices = loop.run_until_complete(get_all_voices())
 
-# Extract all unique language locales dynamically
-locales = sorted(list(set([v["Locale"] for v in all_voices])))
+# Create a clean mapping for Full Language Names
+# Example: en-US -> English (United States) [US] if available or friendly format
+locale_map = {}
+for v in all_voices:
+  loc = v["Locale"]
+  # Extract readable name from FriendlyName or Locale
+  friendly = v.get("FriendlyName", "")
+  if " - " in friendly:
+    lang_name = friendly.split(" - ")[0]
+  else:
+    lang_name = loc
+  locale_map[loc] = f"{lang_name} ({loc})"
+
+sorted_locales = sorted(locale_map.keys(), key=lambda x: locale_map[x])
 
 
 # Async function for Edge TTS generation
@@ -109,14 +121,24 @@ text_input = st.text_area(
     height=150,
 )
 
-# Language / Locale selection (All global locales loaded dynamically)
-default_locale_index = (
-    locales.index("en-US") if "en-US" in locales else 0
-)
+# 1. Search filter for Languages / Locales
+st.markdown("### 🌐 Language & Voice Selection")
+locale_search = st.text_input(
+    "🔍 Search Language (e.g. Urdu, English, Arabic, French...)"
+).lower()
+
+filtered_locales = [
+    loc
+    for loc in sorted_locales
+    if locale_search in locale_map[loc].lower()
+]
+if not filtered_locales:
+  filtered_locales = sorted_locales  # Fallback if nothing matches
+
 selected_locale = st.selectbox(
-    "Select Language / Locale (All Global Regions)",
-    locales,
-    index=default_locale_index,
+    "Select Language / Region",
+    filtered_locales,
+    format_func=lambda x: locale_map[x],
 )
 
 # Filter voices based on selected locale
