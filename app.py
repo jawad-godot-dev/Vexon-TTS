@@ -21,20 +21,41 @@ loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 all_voices = loop.run_until_complete(get_all_voices())
 
-# Create a clean mapping for Full Language Names
-# Example: en-US -> English (United States) [US] if available or friendly format
-locale_map = {}
-for v in all_voices:
-  loc = v["Locale"]
-  # Extract readable name from FriendlyName or Locale
+
+# Format voices cleanly: Language + Country + Voice + Male/Female (Removing Microsoft, Azure etc.)
+def clean_voice_display(v):
+  # v['FriendlyName'] usually looks like: "Microsoft Asad Neural (Urdu, Pakistan)" or similar
+  # We extract clean details
+  locale = v["Locale"]  # e.g., ur-PK
+  gender = v.get("Gender", "Unknown")
+  short_name = v.get("ShortName", "")  # e.g., ur-PK-AsadNeural
+
+  # Extract voice name
+  parts = short_name.split("-")
+  voice_name = parts[-1].replace("Neural", "") if len(parts) >= 3 else "Voice"
+
+  # Clean language/country info from locale or friendly name
   friendly = v.get("FriendlyName", "")
   if " - " in friendly:
-    lang_name = friendly.split(" - ")[0]
+    lang_country = friendly.split(" - ")[0]
+    # Remove Microsoft if present
+    lang_country = (
+        lang_country.replace("Microsoft", "")
+        .replace("Online", "")
+        .replace("Natural", "")
+        .strip()
+    )
   else:
-    lang_name = loc
-  locale_map[loc] = f"{lang_name} ({loc})"
+    lang_country = locale
 
-sorted_locales = sorted(locale_map.keys(), key=lambda x: locale_map[x])
+  return f"{lang_country} - {voice_name} ({gender})"
+
+
+# Prepare rich list of voices with clean display names
+voice_options = []
+for v in all_voices:
+  display_name = clean_voice_display(v)
+  voice_options.append({"display": display_name, "id": v["ShortName"], "raw": v})
 
 
 # Async function for Edge TTS generation
@@ -121,40 +142,32 @@ text_input = st.text_area(
     height=150,
 )
 
-# 1. Search filter for Languages / Locales
-st.markdown("### 🌐 Language & Voice Selection")
-locale_search = st.text_input(
-    "🔍 Search Language (e.g. Urdu, English, Arabic, French...)"
-).lower()
-
-filtered_locales = [
-    loc
-    for loc in sorted_locales
-    if locale_search in locale_map[loc].lower()
-]
-if not filtered_locales:
-  filtered_locales = sorted_locales  # Fallback if nothing matches
-
-selected_locale = st.selectbox(
-    "Select Language / Region",
-    filtered_locales,
-    format_func=lambda x: locale_map[x],
+# Unified Smart Search Bar for Languages & Voices
+st.markdown("### 🔍 Global Voice & Language Search")
+search_query = st.text_input(
+    "Search by Language, Country, or Voice Name (e.g. Urdu, Jenny, Asad,"
+    " Arabic, c...)",
+    "",
 )
 
-# Filter voices based on selected locale
-filtered_voices = [v for v in all_voices if v["Locale"] == selected_locale]
-voice_dict = {
-    f"{v['FriendlyName']} ({v['Gender']})": v["ShortName"]
-    for v in filtered_voices
-}
-
-if voice_dict:
-  selected_voice_name = st.selectbox(
-      "Select Specific AI Voice", list(voice_dict.keys())
-  )
-  voice_id = voice_dict[selected_voice_name]
+# Filter voices dynamically based on user input (handles language, country, or voice name matching)
+if search_query.strip():
+  filtered_options = [
+      opt
+      for opt in voice_options
+      if search_query.lower() in opt["display"].lower()
+  ]
+  if not filtered_options:
+    filtered_options = voice_options  # Fallback if nothing found
 else:
-  voice_id = "en-US-JennyNeural"
+  filtered_options = voice_options
+
+# Dropdown showing filtered results cleanly
+display_to_id = {opt["display"]: opt["id"] for opt in filtered_options}
+selected_display_name = st.selectbox(
+    "Select Voice & Language Result", list(display_to_id.keys())
+)
+voice_id = display_to_id[selected_display_name]
 
 col1, col2 = st.columns(2)
 with col1:
