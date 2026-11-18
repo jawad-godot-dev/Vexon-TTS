@@ -22,29 +22,23 @@ asyncio.set_event_loop(loop)
 all_voices = loop.run_until_complete(get_all_voices())
 
 
-# Format voices cleanly: Language + Country + Voice + Male/Female (Removing Microsoft, Azure etc.)
+# Format voices cleanly: Language (Country) - Voice Name (Gender)
 def clean_voice_display(v):
-  # v['FriendlyName'] usually looks like: "Microsoft Asad Neural (Urdu, Pakistan)" or similar
-  # We extract clean details
-  locale = v["Locale"]  # e.g., ur-PK
+  locale = v.get("Locale", "")  # e.g., ur-PK
   gender = v.get("Gender", "Unknown")
   short_name = v.get("ShortName", "")  # e.g., ur-PK-AsadNeural
+  friendly = v.get("FriendlyName", "")  # e.g., Microsoft Asad (Urdu, Pakistan)
 
-  # Extract voice name
+  # Extract voice name cleanly
   parts = short_name.split("-")
   voice_name = parts[-1].replace("Neural", "") if len(parts) >= 3 else "Voice"
 
-  # Clean language/country info from locale or friendly name
-  friendly = v.get("FriendlyName", "")
-  if " - " in friendly:
-    lang_country = friendly.split(" - ")[0]
-    # Remove Microsoft if present
-    lang_country = (
-        lang_country.replace("Microsoft", "")
-        .replace("Online", "")
-        .replace("Natural", "")
-        .strip()
-    )
+  # Extract Language and Country details cleanly from FriendlyName or Locale
+  if "(" in friendly and ")" in friendly:
+    # e.g. "Microsoft Asad (Urdu, Pakistan)" -> extracts "(Urdu, Pakistan)"
+    start = friendly.find("(")
+    end = friendly.rfind(")")
+    lang_country = friendly[start + 1 : end]
   else:
     lang_country = locale
 
@@ -142,27 +136,35 @@ text_input = st.text_area(
     height=150,
 )
 
-# Unified Smart Search Bar for Languages & Voices
+# Search System with Search Button
 st.markdown("### 🔍 Global Voice & Language Search")
-search_query = st.text_input(
-    "Search by Language, Country, or Voice Name (e.g. Urdu, Jenny, Asad,"
-    " Arabic, c...)",
-    "",
-)
 
-# Filter voices dynamically based on user input (handles language, country, or voice name matching)
+col_search, col_btn = st.columns([3, 1])
+with col_search:
+  search_query = st.text_input(
+      "Search by Language, Country, or Voice Name",
+      value="",
+      placeholder="e.g. Urdu, Jenny, Asad...",
+      label_visibility="collapsed",
+  )
+with col_btn:
+  search_clicked = st.button(
+      "🔎 Search", use_container_width=True, type="secondary"
+  )
+
+# Filter options based on search query
 if search_query.strip():
+  query = search_query.lower()
   filtered_options = [
-      opt
-      for opt in voice_options
-      if search_query.lower() in opt["display"].lower()
+      opt for opt in voice_options if query in opt["display"].lower()
   ]
   if not filtered_options:
-    filtered_options = voice_options  # Fallback if nothing found
+    filtered_options = voice_options
+    st.warning("No matching voices found. Showing all voices.")
 else:
   filtered_options = voice_options
 
-# Dropdown showing filtered results cleanly
+# Dropdown showing clean results
 display_to_id = {opt["display"]: opt["id"] for opt in filtered_options}
 selected_display_name = st.selectbox(
     "Select Voice & Language Result", list(display_to_id.keys())
