@@ -17,7 +17,7 @@ st.set_page_config(
     },
 )
 
-# Custom CSS: Google Fonts, Sticky Branding, and Adaptive Light/Dark Theme Styling
+# Custom CSS: Google Fonts, Sticky Branding, Unified Dark Theme & Bright Luminous Light Theme
 st.markdown(
     """
     <style>
@@ -59,7 +59,7 @@ st.markdown(
         width: 100%;
         height: 60px;
         background: linear-gradient(90deg, #13112b 0%, #2a0e3b 50%, #13112b 100%);
-        border-bottom: 1.5px solid rgba(168, 85, 247, 0.45);
+        border-bottom: 1.5px solid rgba(168, 85, 247, 0.5);
         display: flex;
         align-items: center;
         justify-content: flex-start;
@@ -88,7 +88,7 @@ st.markdown(
     .vexon-badge {
         font-size: 0.68rem;
         color: #e9d5ff;
-        background: rgba(168, 85, 247, 0.2);
+        background: rgba(168, 85, 247, 0.22);
         border: 1px solid rgba(168, 85, 247, 0.45);
         padding: 3px 9px;
         border-radius: 12px;
@@ -103,11 +103,11 @@ st.markdown(
     }
 
     /* =========================================
-       DARK THEME STYLING (Default & System Dark)
+       1. DARK THEME STYLING (Default)
        ========================================= */
-    .stApp {
-        background-color: #0b0d17;
-        color: #f3f4f6;
+    .stApp, [data-testid="stAppViewContainer"] {
+        background-color: #0b0d17 !important;
+        color: #f8fafc !important;
     }
 
     .stApp h1, .stApp h2, .stApp h3 {
@@ -116,104 +116,129 @@ st.markdown(
         letter-spacing: -0.3px;
     }
 
-    .stApp label, .stApp p {
-        color: #cbd5e1;
+    .stApp label, .stApp p, .stApp span {
+        color: #e2e8f0;
     }
 
-    /* Inputs, Textarea & Selectboxes in Dark Mode */
-    .stTextArea textarea,
-    .stTextInput input,
-    div[data-baseweb="select"] > div {
+    /* Textarea, Search Input & Both Selectboxes in Dark Mode */
+    .stApp .stTextArea textarea,
+    .stApp .stTextInput input,
+    .stApp [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         background-color: #141829 !important;
         color: #f8fafc !important;
-        border: 1px solid rgba(139, 92, 246, 0.28) !important;
+        border: 1px solid rgba(168, 85, 247, 0.35) !important;
         border-radius: 12px !important;
         transition: all 0.2s ease-in-out;
     }
 
-    .stTextArea textarea:focus,
-    .stTextInput input:focus,
-    div[data-baseweb="select"] > div:focus-within {
+    /* Inner text & placeholders of Selectboxes in Dark Mode */
+    .stApp [data-testid="stSelectbox"] div[data-baseweb="select"] div,
+    .stApp [data-testid="stSelectbox"] div[data-baseweb="select"] span {
+        background-color: transparent !important;
+        color: #f8fafc !important;
+    }
+
+    .stApp .stTextArea textarea::placeholder,
+    .stApp .stTextInput input::placeholder {
+        color: #94a3b8 !important;
+        opacity: 1 !important;
+    }
+
+    .stApp .stTextArea textarea:focus,
+    .stApp .stTextInput input:focus,
+    .stApp [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
         border-color: #a855f7 !important;
-        box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.22) !important;
+        box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25) !important;
+    }
+
+    /* Dropdown Menu Popup List in Dark Mode */
+    div[data-baseweb="popover"] ul {
+        background-color: #141829 !important;
+        border: 1px solid rgba(168, 85, 247, 0.35) !important;
+    }
+    div[data-baseweb="popover"] li {
+        color: #f8fafc !important;
+    }
+    div[data-baseweb="popover"] li:hover {
+        background-color: rgba(168, 85, 247, 0.25) !important;
     }
 
     /* Advance Expander in Dark Mode */
-    div[data-testid="stExpander"] {
-        background-color: #121524 !important;
-        border: 1px solid rgba(139, 92, 246, 0.22) !important;
+    .stApp div[data-testid="stExpander"] {
+        background-color: #141829 !important;
+        border: 1px solid rgba(168, 85, 247, 0.3) !important;
         border-radius: 12px !important;
+    }
+    .stApp div[data-testid="stExpander"] summary,
+    .stApp div[data-testid="stExpander"] summary p {
+        color: #f8fafc !important;
     }
 
     /* =========================================
-       LIGHT THEME STYLING (Adaptive Override)
+       2. BRIGHT LUMINOUS LIGHT THEME STYLING
+       (Triggers automatically when Streamlit Theme = Light)
        ========================================= */
-    @media (prefers-color-scheme: light) {
-        .stApp {
-            background-color: #f6f7fb;
-            color: #1e1b4b;
+    @container style(--background-color: #ffffff) {
+        .stApp, [data-testid="stAppViewContainer"] {
+            background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 45%, #f8fafc 100%) !important;
+            color: #09090b !important;
         }
+
         .stApp h1, .stApp h2, .stApp h3 {
-            color: #1e1b4b !important;
+            color: #09090b !important;
+            font-weight: 800 !important;
         }
-        .stApp label, .stApp p {
-            color: #475569;
+
+        .stApp label, .stApp p, .stApp span {
+            color: #111827 !important;
+            font-weight: 500;
         }
-        .stTextArea textarea,
-        .stTextInput input,
-        div[data-baseweb="select"] > div {
+
+        /* Crisp Bright White Inputs & Selectboxes with Royal Purple Accent */
+        .stApp .stTextArea textarea,
+        .stApp .stTextInput input,
+        .stApp [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
             background-color: #ffffff !important;
-            color: #0f172a !important;
-            border: 1px solid #cbd5e1 !important;
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+            color: #09090b !important;
+            border: 1.5px solid rgba(124, 58, 237, 0.32) !important;
+            box-shadow: 0 4px 14px rgba(124, 58, 237, 0.07) !important;
         }
-        .stTextArea textarea:focus,
-        .stTextInput input:focus,
-        div[data-baseweb="select"] > div:focus-within {
+
+        .stApp [data-testid="stSelectbox"] div[data-baseweb="select"] div,
+        .stApp [data-testid="stSelectbox"] div[data-baseweb="select"] span {
+            background-color: transparent !important;
+            color: #09090b !important;
+        }
+
+        .stApp .stTextArea textarea::placeholder,
+        .stApp .stTextInput input::placeholder {
+            color: #6b7280 !important;
+            opacity: 1 !important;
+        }
+
+        .stApp .stTextArea textarea:focus,
+        .stApp .stTextInput input:focus,
+        .stApp [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
             border-color: #7c3aed !important;
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.14) !important;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18) !important;
         }
-        div[data-testid="stExpander"] {
+
+        /* Advance Expander in Bright Light Mode */
+        .stApp div[data-testid="stExpander"] {
             background-color: #ffffff !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03) !important;
+            border: 1.5px solid rgba(124, 58, 237, 0.28) !important;
+            box-shadow: 0 4px 14px rgba(124, 58, 237, 0.06) !important;
+        }
+        .stApp div[data-testid="stExpander"] summary,
+        .stApp div[data-testid="stExpander"] summary p {
+            color: #09090b !important;
+            font-weight: 600 !important;
         }
     }
 
-    /* Streamlit Manual Light Theme Switch Support */
-    .stApp[style*="background-color: rgb(255, 255, 255)"],
-    .stApp[data-theme="light"] {
-        background-color: #f6f7fb !important;
-        color: #1e1b4b !important;
-    }
-    .stApp[style*="background-color: rgb(255, 255, 255)"] h3,
-    .stApp[data-theme="light"] h3 {
-        color: #1e1b4b !important;
-    }
-    .stApp[style*="background-color: rgb(255, 255, 255)"] label,
-    .stApp[data-theme="light"] label {
-        color: #334155 !important;
-    }
-    .stApp[style*="background-color: rgb(255, 255, 255)"] .stTextArea textarea,
-    .stApp[style*="background-color: rgb(255, 255, 255)"] .stTextInput input,
-    .stApp[style*="background-color: rgb(255, 255, 255)"] div[data-baseweb="select"] > div,
-    .stApp[data-theme="light"] .stTextArea textarea,
-    .stApp[data-theme="light"] .stTextInput input,
-    .stApp[data-theme="light"] div[data-baseweb="select"] > div {
-        background-color: #ffffff !important;
-        color: #0f172a !important;
-        border: 1px solid #cbd5e1 !important;
-        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
-    }
-    .stApp[style*="background-color: rgb(255, 255, 255)"] div[data-testid="stExpander"],
-    .stApp[data-theme="light"] div[data-testid="stExpander"] {
-        background-color: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-    }
-
-    /* Primary Generate Button Styling */
+    /* Primary Generate Button Styling (Matches VEXON Branding) */
     button[kind="primary"] {
-        background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%) !important;
+        background: linear-gradient(135deg, #9333ea 0%, #4f46e5 100%) !important;
         color: #ffffff !important;
         border: none !important;
         border-radius: 12px !important;
@@ -222,6 +247,10 @@ st.markdown(
         letter-spacing: 0.4px;
         box-shadow: 0 6px 18px rgba(124, 58, 237, 0.35) !important;
         transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+    }
+
+    button[kind="primary"] p, button[kind="primary"] span {
+        color: #ffffff !important;
     }
 
     button[kind="primary"]:hover {
@@ -233,7 +262,7 @@ st.markdown(
     div[data-testid="stDownloadButton"] button {
         border-radius: 10px !important;
         font-weight: 600 !important;
-        border: 1px solid rgba(139, 92, 246, 0.4) !important;
+        border: 1.5px solid rgba(139, 92, 246, 0.45) !important;
         transition: all 0.2s ease !important;
     }
     div[data-testid="stDownloadButton"] button:hover {
