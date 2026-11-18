@@ -38,7 +38,6 @@ def get_language_country_groups(voices):
     friendly = v.get("FriendlyName", "")
     locale = v.get("Locale", "")
 
-    # Extract only the Language + Country part after " - "
     if " - " in friendly:
       raw_lang = friendly.split(" - ")[-1]
     else:
@@ -126,22 +125,21 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Empty Text Box at Start
 text_input = st.text_area(
     "Enter Text for Speech",
-    value=(
-        "Welcome to VEXON Voice studio. Create professional voiceovers and"
-        " synchronized subtitles instantly!"
-    ),
+    value="",
+    placeholder="Type or paste your script here...",
     height=150,
 )
 
 st.markdown("### 🌐 Language & Voice Selection")
 
-# Smart Multi-Word Search (Matches Language, Country, or Speaker Name in any order)
+# Empty Smart Search Bar at Start
 search_query = st.text_input(
-    "🔍 Smart Search (Type Language, Country, or Voice Name e.g. English"
-    " Australia, Urdu, Asad)",
-    "",
+    "🔍 Smart Search (Type Language, Country, or Voice Name)",
+    value="",
+    placeholder="e.g. English Australia, Urdu, Asad...",
 )
 
 query_tokens = clean_text(search_query).lower().split()
@@ -150,7 +148,6 @@ if query_tokens:
   matched_languages = []
   for lang in sorted_languages:
     voices_in_lang = lang_groups[lang]
-    # Build searchable index combining language, country, locale, and all speaker names
     voice_names_str = " ".join([
         clean_text(v.get("ShortName", "").split("-")[-1])
         + " "
@@ -159,7 +156,6 @@ if query_tokens:
     ])
     full_searchable_text = f"{lang} {voice_names_str}".lower()
 
-    # Check if every word typed by user exists anywhere in the language or its voices
     if all(token in full_searchable_text for token in query_tokens):
       matched_languages.append(lang)
 
@@ -169,40 +165,44 @@ if query_tokens:
 else:
   matched_languages = sorted_languages
 
-# Tab 1: Clean Language & Country Selector
+# Tab 1: Empty Language & Country Selector at Start (index=None)
 selected_language = st.selectbox(
-    "1️⃣ Select Language & Country", matched_languages
+    "1️⃣ Select Language & Country",
+    matched_languages,
+    index=None,
+    placeholder="Choose a language & country...",
 )
 
-# Tab 2: Clean Voices for the selected Language & Country
-available_voices_in_lang = lang_groups.get(selected_language, [])
-
+# Tab 2: Empty Voice Selector until Language is chosen
 voice_dict = {}
-for v in available_voices_in_lang:
-  short_name = v.get("ShortName", "")
-  parts = short_name.split("-")
-  raw_voice = parts[-1] if len(parts) >= 3 else "Voice"
-  voice_name = clean_text(raw_voice)
-  gender = v.get("Gender", "Unknown")
+if selected_language:
+  available_voices_in_lang = lang_groups.get(selected_language, [])
+  for v in available_voices_in_lang:
+    short_name = v.get("ShortName", "")
+    parts = short_name.split("-")
+    raw_voice = parts[-1] if len(parts) >= 3 else "Voice"
+    voice_name = clean_text(raw_voice)
+    gender = v.get("Gender", "Unknown")
 
-  display_label = f"{voice_name} - {gender}"
-  voice_dict[display_label] = v["ShortName"]
+    display_label = f"{voice_name} - {gender}"
+    voice_dict[display_label] = v["ShortName"]
 
-# Smart auto-filter inside Voice Tab if user specifically searched a speaker's name (e.g. "Asad")
-if query_tokens:
-  filtered_voice_dict = {
-      label: vid
-      for label, vid in voice_dict.items()
-      if all(token in label.lower() for token in query_tokens)
-  }
-  # Only narrow down if the search matched specific voice(s), not just the language name
-  if filtered_voice_dict:
-    voice_dict = filtered_voice_dict
+  if query_tokens:
+    filtered_voice_dict = {
+        label: vid
+        for label, vid in voice_dict.items()
+        if all(token in label.lower() for token in query_tokens)
+    }
+    if filtered_voice_dict:
+      voice_dict = filtered_voice_dict
 
 selected_voice_label = st.selectbox(
-    "2️⃣ Select Voice & Gender", list(voice_dict.keys())
+    "2️⃣ Select Voice & Gender",
+    list(voice_dict.keys()),
+    index=None,
+    placeholder="Choose a voice...",
 )
-voice_id = voice_dict[selected_voice_label]
+voice_id = voice_dict.get(selected_voice_label) if selected_voice_label else None
 
 col1, col2 = st.columns(2)
 with col1:
@@ -222,7 +222,9 @@ if st.button(
     "🚀 Generate Voice & Files", type="primary", use_container_width=True
 ):
   if not text_input.strip():
-    st.warning("Please enter some text to generate speech.")
+    st.warning("Please enter some text in the box first.")
+  elif not selected_language or not voice_id:
+    st.warning("Please select both a Language and a Voice first.")
   else:
     with st.spinner("Generating audio and export formats..."):
       audio_file, srt_file, txt_file = loop.run_until_complete(
