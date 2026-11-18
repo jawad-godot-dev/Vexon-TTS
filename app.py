@@ -5,9 +5,9 @@ import tempfile
 import edge_tts
 import streamlit as st
 
-# Page Configuration (Removes Get Help, Report a Bug, and About from 3-dot menu, keeping Settings/Theme)
+# Page Configuration
 st.set_page_config(
-    page_title="Vexon Voice Studio",
+    page_title="VEXON Voice Studio",
     page_icon="🎙️",
     layout="centered",
     menu_items={
@@ -17,17 +17,21 @@ st.set_page_config(
     },
 )
 
-# Custom CSS for Sticky Sleek Header, Hiding GitHub/Share, and Security
+# Custom CSS & Fixed Top Branding with Custom SVG Logo
 st.markdown(
     """
     <style>
-    /* Make top Streamlit header transparent so 3-dot menu stays clickable */
+    /* Keep Streamlit top header transparent and above bar so 3-dot menu works */
     header[data-testid="stHeader"] {
         background: transparent !important;
-        z-index: 100001 !important;
+        z-index: 100002 !important;
+        pointer-events: none;
+    }
+    header[data-testid="stHeader"] * {
+        pointer-events: auto;
     }
 
-    /* Hide GitHub icon, Share button, Star, and Deploy buttons */
+    /* Hide GitHub icon, Share, Star, and Deploy buttons */
     [data-testid="stToolbarActions"],
     .stDeployButton,
     a[href*="github.com"],
@@ -40,56 +44,75 @@ st.markdown(
         visibility: hidden !important;
     }
 
-    /* Sleek Fixed/Sticky Branding Bar at the very top */
-    .vexon-sticky-header {
+    /* Sleek Fixed/Sticky Branding Bar at the top */
+    .vexon-navbar {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
-        height: 56px;
-        background: linear-gradient(90deg, #1e1b4b 0%, #311042 50%, #1e1b4b 100%);
-        border-bottom: 1px solid rgba(168, 85, 247, 0.35);
+        height: 60px;
+        background: linear-gradient(90deg, #13112b 0%, #2a0e3b 50%, #13112b 100%);
+        border-bottom: 1.5px solid rgba(168, 85, 247, 0.45);
         display: flex;
         align-items: center;
-        justify-content: center;
-        z-index: 99999;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        padding: 0 50px;
+        justify-content: flex-start;
+        padding: 0 20px;
+        z-index: 100000;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
     }
 
-    .vexon-sticky-header h2 {
-        color: #c084fc;
-        font-size: 1.25rem;
-        font-weight: 700;
+    .vexon-brand-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .vexon-title {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: 2.5px;
+        background: linear-gradient(90deg, #e879f9, #a855f7, #60a5fa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         margin: 0;
-        letter-spacing: 1px;
-        white-space: nowrap;
+        line-height: 1;
     }
 
-    .vexon-sticky-header span {
-        color: #e5e7eb;
-        font-size: 0.85rem;
-        font-weight: 400;
-        margin-left: 10px;
+    .vexon-badge {
+        font-size: 0.7rem;
+        color: #d8b4fe;
+        background: rgba(168, 85, 247, 0.18);
+        border: 1px solid rgba(168, 85, 247, 0.4);
+        padding: 3px 8px;
+        border-radius: 12px;
+        letter-spacing: 0.8px;
+        font-weight: 600;
     }
 
-    /* Adjust main content padding so it doesn't hide under the fixed header */
+    /* Push main app content below fixed navbar */
     .block-container {
-        padding-top: 75px !important;
-    }
-
-    @media (max-width: 600px) {
-        .vexon-sticky-header span {
-            display: none;
-        }
-        .vexon-sticky-header h2 {
-            font-size: 1.1rem;
-        }
+        padding-top: 82px !important;
     }
     </style>
 
-    <div class="vexon-sticky-header">
-        <h2>🎙️ VEXON Voice Studio <span>| AI Text-to-Speech</span></h2>
+    <div class="vexon-navbar">
+        <div class="vexon-brand-box">
+            <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="vexonGrad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#e879f9"/>
+                        <stop offset="50%" stop-color="#9333ea"/>
+                        <stop offset="100%" stop-color="#3b82f6"/>
+                    </linearGradient>
+                </defs>
+                <rect x="2" y="2" width="36" height="36" rx="10" fill="url(#vexonGrad)" fill-opacity="0.18" stroke="url(#vexonGrad)" stroke-width="2.2"/>
+                <path d="M11 12L20 29L29 12" stroke="url(#vexonGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="20" cy="13" r="2.2" fill="#e879f9"/>
+            </svg>
+            <span class="vexon-title">VEXON</span>
+            <span class="vexon-badge">VOICE STUDIO</span>
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -111,7 +134,7 @@ all_voices = loop.run_until_complete(get_all_voices())
 # Clean text helper: removes Natural, Neural, Microsoft, Online, and all brackets
 def clean_text(text):
   for word in ["Microsoft", "Online", "Natural", "Neural"]:
-    text = re.sub(rf"\b{word}\b", "", text, flags=re.IGNORECASE)
+    text = re.sub(word, "", text, flags=re.IGNORECASE)
   text = re.sub(r"[(),\-]", " ", text)
   return " ".join(text.split()).strip()
 
@@ -209,7 +232,7 @@ text_input = st.text_area(
 
 st.markdown("### 🌐 Language & Voice Selection")
 
-# Smart Search Bar with requested placeholder
+# Smart Search Bar
 search_query = st.text_input(
     "🔍 Smart Search",
     value="",
@@ -278,15 +301,17 @@ selected_voice_label = st.selectbox(
 )
 voice_id = voice_dict.get(selected_voice_label) if selected_voice_label else None
 
-col1, col2 = st.columns(2)
-with col1:
-  rate_val = st.slider(
-      "Speed Rate (%)", min_value=-50, max_value=50, value=0, step=5
-  )
-with col2:
-  pitch_val = st.slider(
-      "Pitch Shift (Hz)", min_value=-20, max_value=20, value=0, step=1
-  )
+# Advance Dropdown (Collapsible) for Speed & Pitch
+with st.expander("⚙️ Advance", expanded=False):
+  col1, col2 = st.columns(2)
+  with col1:
+    rate_val = st.slider(
+        "Speed Rate (%)", min_value=-50, max_value=50, value=0, step=5
+    )
+  with col2:
+    pitch_val = st.slider(
+        "Pitch Shift (Hz)", min_value=-20, max_value=20, value=0, step=1
+    )
 
 generate_srt = st.checkbox(
     "Generate Synchronized SRT Subtitles (.srt)", value=True
