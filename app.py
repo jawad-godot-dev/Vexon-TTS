@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import tempfile
 import edge_tts
 import streamlit as st
@@ -22,19 +23,29 @@ asyncio.set_event_loop(loop)
 all_voices = loop.run_until_complete(get_all_voices())
 
 
-# Group voices by Language & Country
+# Clean text helper: removes Natural, Neural, Microsoft, Online, and all brackets
+def clean_text(text):
+  for word in ["Microsoft", "Online", "Natural", "Neural"]:
+    text = re.sub(rf"\b{word}\b", "", text, flags=re.IGNORECASE)
+  text = re.sub(r"[(),\-]", " ", text)
+  return " ".join(text.split()).strip()
+
+
+# Group voices by clean Language & Country
 def get_language_country_groups(voices):
   groups = {}
   for v in voices:
     friendly = v.get("FriendlyName", "")
     locale = v.get("Locale", "")
 
-    # Clean language and country name from FriendlyName
-    if "(" in friendly and ")" in friendly:
-      start = friendly.find("(")
-      end = friendly.rfind(")")
-      lang_country = friendly[start + 1 : end]
+    # Extract only the Language + Country part after " - "
+    if " - " in friendly:
+      raw_lang = friendly.split(" - ")[-1]
     else:
+      raw_lang = locale
+
+    lang_country = clean_text(raw_lang)
+    if not lang_country:
       lang_country = locale
 
     if lang_country not in groups:
@@ -51,15 +62,8 @@ sorted_languages = sorted(list(lang_groups.keys()))
 async def generate_tts(
     text, voice_id, rate_val, pitch_val, generate_srt
 ):
-  if rate_val == 0:
-    rate_str = "+0%"
-  else:
-    rate_str = f"{rate_val:+d}%"
-
-  if pitch_val == 0:
-    pitch_str = "+0Hz"
-  else:
-    pitch_str = f"{pitch_val:+d}Hz"
+  rate_str = "+0%" if rate_val == 0 else f"{rate_val:+d}%"
+  pitch_str = "+0Hz" if pitch_val == 0 else f"{pitch_val:+d}Hz"
 
   temp_dir = tempfile.mkdtemp()
   audio_path = os.path.join(temp_dir, "vexon_output.mp3")
@@ -131,21 +135,32 @@ text_input = st.text_area(
     height=150,
 )
 
-st.markdown("### 🌐 Voice & Language Selection")
+st.markdown("### 🌐 Language & Voice Selection")
 
-# Enhanced Smart Search (ignores spaces/special characters for flexible matching like "English Australia")
+# Smart Multi-Word Search (Matches Language, Country, or Speaker Name in any order)
 search_query = st.text_input(
-    "🔍 Smart Search Language / Country (e.g. English Australia, Urdu, Arabic)",
+    "🔍 Smart Search (Type Language, Country, or Voice Name e.g. English"
+    " Australia, Urdu, Asad)",
     "",
 )
 
-if search_query.strip():
-  # Clean query by removing spaces and punctuation for flexible matching
-  clean_query = "".join(search_query.lower().split())
+query_tokens = clean_text(search_query).lower().split()
+
+if query_tokens:
   matched_languages = []
   for lang in sorted_languages:
-    clean_lang = "".join(lang.lower().split())
-    if clean_query in clean_lang:
+    voices_in_lang = lang_groups[lang]
+    # Build searchable index combining language, country, locale, and all speaker names
+    voice_names_str = " ".join([
+        clean_text(v.get("ShortName", "").split("-")[-1])
+        + " "
+        + v.get("Gender", "")
+        for v in voices_in_lang
+    ])
+    full_searchable_text = f"{lang} {voice_names_str}".lower()
+
+    # Check if every word typed by user exists anywhere in the language or its voices
+    if all(token in full_searchable_text for token in query_tokens):
       matched_languages.append(lang)
 
   if not matched_languages:
@@ -154,26 +169,38 @@ if search_query.strip():
 else:
   matched_languages = sorted_languages
 
-# Tab 1: Language & Country Selector
+# Tab 1: Clean Language & Country Selector
 selected_language = st.selectbox(
     "1️⃣ Select Language & Country", matched_languages
 )
 
-# Tab 2: Voices corresponding to the selected Language & Country
+# Tab 2: Clean Voices for the selected Language & Country
 available_voices_in_lang = lang_groups.get(selected_language, [])
 
 voice_dict = {}
 for v in available_voices_in_lang:
   short_name = v.get("ShortName", "")
   parts = short_name.split("-")
-  voice_name = parts[-1].replace("Neural", "") if len(parts) >= 3 else "Voice"
+  raw_voice = parts[-1] if len(parts) >= 3 else "Voice"
+  voice_name = clean_text(raw_voice)
   gender = v.get("Gender", "Unknown")
 
-  display_label = f"{voice_name} ({gender})"
+  display_label = f"{voice_name} - {gender}"
   voice_dict[display_label] = v["ShortName"]
 
+# Smart auto-filter inside Voice Tab if user specifically searched a speaker's name (e.g. "Asad")
+if query_tokens:
+  filtered_voice_dict = {
+      label: vid
+      for label, vid in voice_dict.items()
+      if all(token in label.lower() for token in query_tokens)
+  }
+  # Only narrow down if the search matched specific voice(s), not just the language name
+  if filtered_voice_dict:
+    voice_dict = filtered_voice_dict
+
 selected_voice_label = st.selectbox(
-    "2️⃣ Select Specific Voice & Gender", list(voice_dict.keys())
+    "2️⃣ Select Voice & Gender", list(voice_dict.keys())
 )
 voice_id = voice_dict[selected_voice_label]
 
