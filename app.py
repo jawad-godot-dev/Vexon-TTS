@@ -2,12 +2,15 @@ import asyncio
 import os
 import re
 import tempfile
+import urllib.parse
 import edge_tts
 import streamlit as st
 
-# Page Configuration
+# Page Configuration with SEO-friendly Title
 st.set_page_config(
-    page_title="VEXON Voice Studio",
+    page_title=(
+        "VEXON Voice Studio - Free Unlimited AI Text to Speech & SRT Generator"
+    ),
     page_icon="🎙️",
     layout="centered",
     menu_items={
@@ -99,7 +102,7 @@ st.markdown(
     /* Push main app content below fixed navbar */
     .block-container {
         padding-top: 84px !important;
-        padding-bottom: 40px !important;
+        padding-bottom: 30px !important;
     }
 
     /* =========================================
@@ -131,7 +134,6 @@ st.markdown(
         transition: all 0.2s ease-in-out;
     }
 
-    /* Inner text & placeholders of Selectboxes in Dark Mode */
     .stApp [data-testid="stSelectbox"] div[data-baseweb="select"] div,
     .stApp [data-testid="stSelectbox"] div[data-baseweb="select"] span {
         background-color: transparent !important;
@@ -176,7 +178,6 @@ st.markdown(
 
     /* =========================================
        2. BRIGHT LUMINOUS LIGHT THEME STYLING
-       (Triggers automatically when Streamlit Theme = Light)
        ========================================= */
     @container style(--background-color: #ffffff) {
         .stApp, [data-testid="stAppViewContainer"] {
@@ -194,7 +195,6 @@ st.markdown(
             font-weight: 500;
         }
 
-        /* Crisp Bright White Inputs & Selectboxes with Royal Purple Accent */
         .stApp .stTextArea textarea,
         .stApp .stTextInput input,
         .stApp [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
@@ -223,7 +223,6 @@ st.markdown(
             box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18) !important;
         }
 
-        /* Advance Expander in Bright Light Mode */
         .stApp div[data-testid="stExpander"] {
             background-color: #ffffff !important;
             border: 1.5px solid rgba(124, 58, 237, 0.28) !important;
@@ -236,7 +235,7 @@ st.markdown(
         }
     }
 
-    /* Primary Generate Button Styling (Matches VEXON Branding) */
+    /* Primary Generate Button Styling */
     button[kind="primary"] {
         background: linear-gradient(135deg, #9333ea 0%, #4f46e5 100%) !important;
         color: #ffffff !important;
@@ -268,6 +267,38 @@ st.markdown(
     div[data-testid="stDownloadButton"] button:hover {
         border-color: #8b5cf6 !important;
         background-color: rgba(139, 92, 246, 0.12) !important;
+    }
+
+    /* Viral Share Button */
+    .vexon-share-btn {
+        display: block;
+        width: 100%;
+        text-align: center;
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        color: #ffffff !important;
+        text-decoration: none !important;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        margin-top: 14px;
+        box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);
+        transition: transform 0.15s ease;
+    }
+    .vexon-share-btn:hover {
+        transform: translateY(-1px);
+        color: #ffffff !important;
+    }
+
+    /* SEO Footer Styling */
+    .vexon-seo-footer {
+        margin-top: 45px;
+        padding-top: 18px;
+        border-top: 1px solid rgba(139, 92, 246, 0.2);
+        text-align: center;
+        font-size: 0.78rem;
+        opacity: 0.65;
+        line-height: 1.6;
     }
 
     /* Audio Player Rounded Styling */
@@ -314,7 +345,7 @@ asyncio.set_event_loop(loop)
 all_voices = loop.run_until_complete(get_all_voices())
 
 
-# Clean text helper: removes Natural, Neural, Microsoft, Online, and all brackets
+# Clean text helper
 def clean_text(text):
   for word in ["Microsoft", "Online", "Natural", "Neural"]:
     text = re.sub(word, "", text, flags=re.IGNORECASE)
@@ -551,7 +582,31 @@ if st.button(
                   file_name="vexon_subtitles.srt",
                   mime="text/plain",
               )
+
+        # Viral One-Click WhatsApp Share Button
+        share_msg = urllib.parse.quote(
+            "🎙️ Check out VEXON Voice Studio! Generate 100% free unlimited AI"
+            " voiceovers in 100+ languages with auto SRT subtitles & MP3"
+            " download! 🔥"
+        )
+        st.markdown(
+            f'<a href="https://api.whatsapp.com/send?text={share_msg}"'
+            ' target="_blank" class="vexon-share-btn">📲 Share VEXON Voice'
+            " Studio with Friends</a>",
+            unsafe_allow_html=True,
+        )
     except Exception:
       st.error(
           "Service is temporarily busy. Please try again in a few seconds."
       )
+
+# SEO Footer for Google Indexing & Discoverability
+st.markdown(
+    """
+    <div class="vexon-seo-footer">
+        <strong>VEXON Voice Studio</strong> — Free Unlimited AI Text-to-Speech (TTS) &amp; Voiceover Generator.<br>
+        Convert text to natural human voices in 100+ global languages including English, Urdu, Arabic, Hindi, Spanish &amp; French. Instant MP3 audio, synchronized SRT subtitles, and TXT script export for YouTube, TikTok, Reels, and content creators.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
