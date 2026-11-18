@@ -26,8 +26,16 @@ VOICES = {
 
 # Async function for Edge TTS
 async def generate_tts(text, voice_id, rate_val, pitch_val, generate_srt):
-    rate_str = f"{'+' if rate_val > 0 else ''}{rate_val}%"
-    pitch_str = f"{'+' if pitch_val > 0 else ''}{pitch_val}Hz"
+    # Fixed rate and pitch formatting
+    if rate_val == 0:
+        rate_str = "+0%"
+    else:
+        rate_str = f"{rate_val:+d}%"
+
+    if pitch_val == 0:
+        pitch_str = "+0Hz"
+    else:
+        pitch_str = f"{pitch_val:+d}Hz"
 
     temp_dir = tempfile.mkdtemp()
     audio_path = os.path.join(temp_dir, "vexon_output.mp3")
