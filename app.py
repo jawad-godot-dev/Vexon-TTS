@@ -99,7 +99,7 @@ voice_id = VOICES[selected_voice_name]
 col1, col2 = st.columns(2)
 with col1:
     rate_val = st.slider(
-        "Speed Rate (%)", min_for=-50, max_value=50, value=0, step=5
+        "Speed Rate (%)", min_value=-50, max_value=50, value=0, step=5
     )
 with col2:
     pitch_val = st.slider(
