@@ -17,11 +17,18 @@ st.set_page_config(
     },
 )
 
-# Custom CSS & Fixed Top Branding with Custom SVG Logo
+# Custom CSS: Google Fonts, Sticky Branding, and Adaptive Light/Dark Theme Styling
 st.markdown(
     """
     <style>
-    /* Keep Streamlit top header transparent and above bar so 3-dot menu works */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    /* Global Font Family */
+    html, body, [class*="css"], .stApp, button, input, textarea, select {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }
+
+    /* Keep Streamlit top header transparent so 3-dot menu stays clickable */
     header[data-testid="stHeader"] {
         background: transparent !important;
         z-index: 100002 !important;
@@ -56,9 +63,9 @@ st.markdown(
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        padding: 0 20px;
+        padding: 0 22px;
         z-index: 100000;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
     }
 
     .vexon-brand-box {
@@ -68,7 +75,6 @@ st.markdown(
     }
 
     .vexon-title {
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         font-size: 1.45rem;
         font-weight: 800;
         letter-spacing: 2.5px;
@@ -80,19 +86,167 @@ st.markdown(
     }
 
     .vexon-badge {
-        font-size: 0.7rem;
-        color: #d8b4fe;
-        background: rgba(168, 85, 247, 0.18);
-        border: 1px solid rgba(168, 85, 247, 0.4);
-        padding: 3px 8px;
+        font-size: 0.68rem;
+        color: #e9d5ff;
+        background: rgba(168, 85, 247, 0.2);
+        border: 1px solid rgba(168, 85, 247, 0.45);
+        padding: 3px 9px;
         border-radius: 12px;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.9px;
         font-weight: 600;
     }
 
     /* Push main app content below fixed navbar */
     .block-container {
-        padding-top: 82px !important;
+        padding-top: 84px !important;
+        padding-bottom: 40px !important;
+    }
+
+    /* =========================================
+       DARK THEME STYLING (Default & System Dark)
+       ========================================= */
+    .stApp {
+        background-color: #0b0d17;
+        color: #f3f4f6;
+    }
+
+    .stApp h1, .stApp h2, .stApp h3 {
+        color: #f8fafc !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.3px;
+    }
+
+    .stApp label, .stApp p {
+        color: #cbd5e1;
+    }
+
+    /* Inputs, Textarea & Selectboxes in Dark Mode */
+    .stTextArea textarea,
+    .stTextInput input,
+    div[data-baseweb="select"] > div {
+        background-color: #141829 !important;
+        color: #f8fafc !important;
+        border: 1px solid rgba(139, 92, 246, 0.28) !important;
+        border-radius: 12px !important;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .stTextArea textarea:focus,
+    .stTextInput input:focus,
+    div[data-baseweb="select"] > div:focus-within {
+        border-color: #a855f7 !important;
+        box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.22) !important;
+    }
+
+    /* Advance Expander in Dark Mode */
+    div[data-testid="stExpander"] {
+        background-color: #121524 !important;
+        border: 1px solid rgba(139, 92, 246, 0.22) !important;
+        border-radius: 12px !important;
+    }
+
+    /* =========================================
+       LIGHT THEME STYLING (Adaptive Override)
+       ========================================= */
+    @media (prefers-color-scheme: light) {
+        .stApp {
+            background-color: #f6f7fb;
+            color: #1e1b4b;
+        }
+        .stApp h1, .stApp h2, .stApp h3 {
+            color: #1e1b4b !important;
+        }
+        .stApp label, .stApp p {
+            color: #475569;
+        }
+        .stTextArea textarea,
+        .stTextInput input,
+        div[data-baseweb="select"] > div {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+        }
+        .stTextArea textarea:focus,
+        .stTextInput input:focus,
+        div[data-baseweb="select"] > div:focus-within {
+            border-color: #7c3aed !important;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.14) !important;
+        }
+        div[data-testid="stExpander"] {
+            background-color: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03) !important;
+        }
+    }
+
+    /* Streamlit Manual Light Theme Switch Support */
+    .stApp[style*="background-color: rgb(255, 255, 255)"],
+    .stApp[data-theme="light"] {
+        background-color: #f6f7fb !important;
+        color: #1e1b4b !important;
+    }
+    .stApp[style*="background-color: rgb(255, 255, 255)"] h3,
+    .stApp[data-theme="light"] h3 {
+        color: #1e1b4b !important;
+    }
+    .stApp[style*="background-color: rgb(255, 255, 255)"] label,
+    .stApp[data-theme="light"] label {
+        color: #334155 !important;
+    }
+    .stApp[style*="background-color: rgb(255, 255, 255)"] .stTextArea textarea,
+    .stApp[style*="background-color: rgb(255, 255, 255)"] .stTextInput input,
+    .stApp[style*="background-color: rgb(255, 255, 255)"] div[data-baseweb="select"] > div,
+    .stApp[data-theme="light"] .stTextArea textarea,
+    .stApp[data-theme="light"] .stTextInput input,
+    .stApp[data-theme="light"] div[data-baseweb="select"] > div {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+    }
+    .stApp[style*="background-color: rgb(255, 255, 255)"] div[data-testid="stExpander"],
+    .stApp[data-theme="light"] div[data-testid="stExpander"] {
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    /* Primary Generate Button Styling */
+    button[kind="primary"] {
+        background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 0.65rem 1.2rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.4px;
+        box-shadow: 0 6px 18px rgba(124, 58, 237, 0.35) !important;
+        transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+    }
+
+    button[kind="primary"]:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(124, 58, 237, 0.5) !important;
+    }
+
+    /* Download Buttons Styling */
+    div[data-testid="stDownloadButton"] button {
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        border: 1px solid rgba(139, 92, 246, 0.4) !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-testid="stDownloadButton"] button:hover {
+        border-color: #8b5cf6 !important;
+        background-color: rgba(139, 92, 246, 0.12) !important;
+    }
+
+    /* Audio Player Rounded Styling */
+    audio {
+        width: 100%;
+        border-radius: 12px;
+        margin-top: 8px;
+        margin-bottom: 12px;
     }
     </style>
 
