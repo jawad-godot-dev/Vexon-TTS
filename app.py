@@ -5,13 +5,98 @@ import tempfile
 import edge_tts
 import streamlit as st
 
-# Page Configuration
+# Page Configuration (Removes Get Help, Report a Bug, and About from 3-dot menu, keeping Settings/Theme)
 st.set_page_config(
-    page_title="Vexon Voice Studio", page_icon="🎙️", layout="centered"
+    page_title="Vexon Voice Studio",
+    page_icon="🎙️",
+    layout="centered",
+    menu_items={
+        "Get Help": None,
+        "Report a bug": None,
+        "About": None,
+    },
+)
+
+# Custom CSS for Sticky Sleek Header, Hiding GitHub/Share, and Security
+st.markdown(
+    """
+    <style>
+    /* Make top Streamlit header transparent so 3-dot menu stays clickable */
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+        z-index: 100001 !important;
+    }
+
+    /* Hide GitHub icon, Share button, Star, and Deploy buttons */
+    [data-testid="stToolbarActions"],
+    .stDeployButton,
+    a[href*="github.com"],
+    button[title="View app source"] {
+        display: none !important;
+    }
+
+    /* Hide Streamlit Footer */
+    footer {
+        visibility: hidden !important;
+    }
+
+    /* Sleek Fixed/Sticky Branding Bar at the very top */
+    .vexon-sticky-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 56px;
+        background: linear-gradient(90deg, #1e1b4b 0%, #311042 50%, #1e1b4b 100%);
+        border-bottom: 1px solid rgba(168, 85, 247, 0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        padding: 0 50px;
+    }
+
+    .vexon-sticky-header h2 {
+        color: #c084fc;
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: 1px;
+        white-space: nowrap;
+    }
+
+    .vexon-sticky-header span {
+        color: #e5e7eb;
+        font-size: 0.85rem;
+        font-weight: 400;
+        margin-left: 10px;
+    }
+
+    /* Adjust main content padding so it doesn't hide under the fixed header */
+    .block-container {
+        padding-top: 75px !important;
+    }
+
+    @media (max-width: 600px) {
+        .vexon-sticky-header span {
+            display: none;
+        }
+        .vexon-sticky-header h2 {
+            font-size: 1.1rem;
+        }
+    }
+    </style>
+
+    <div class="vexon-sticky-header">
+        <h2>🎙️ VEXON Voice Studio <span>| AI Text-to-Speech</span></h2>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 
-# Fetch all available voices dynamically from Edge-TTS
+# Fetch all available voices dynamically
 @st.cache_data
 async def get_all_voices():
   voices = await edge_tts.list_voices()
@@ -114,17 +199,6 @@ async def generate_tts(
   return audio_path, final_srt_path, txt_path
 
 
-# UI Design
-st.markdown(
-    """
-    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #1e1b4b, #311042); border-radius: 12px; margin-bottom: 20px;">
-        <h1 style="color: #a855f7; margin-bottom: 0;">🎙️ VEXON Voice Studio</h1>
-        <p style="color: #9ca3af;">Next-Gen Free AI Text-to-Speech & Multi-Format Downloader</p>
-    </div>
-""",
-    unsafe_allow_html=True,
-)
-
 # Empty Text Box at Start
 text_input = st.text_area(
     "Enter Text for Speech",
@@ -135,11 +209,11 @@ text_input = st.text_area(
 
 st.markdown("### 🌐 Language & Voice Selection")
 
-# Empty Smart Search Bar at Start
+# Smart Search Bar with requested placeholder
 search_query = st.text_input(
-    "🔍 Smart Search (Type Language, Country, or Voice Name)",
+    "🔍 Smart Search",
     value="",
-    placeholder="e.g. English Australia, Urdu, Asad...",
+    placeholder="e.g. English United States, Jenny",
 )
 
 query_tokens = clean_text(search_query).lower().split()
@@ -165,7 +239,7 @@ if query_tokens:
 else:
   matched_languages = sorted_languages
 
-# Tab 1: Empty Language & Country Selector at Start (index=None)
+# Tab 1: Language & Country Selector
 selected_language = st.selectbox(
     "1️⃣ Select Language & Country",
     matched_languages,
@@ -173,7 +247,7 @@ selected_language = st.selectbox(
     placeholder="Choose a language & country...",
 )
 
-# Tab 2: Empty Voice Selector until Language is chosen
+# Tab 2: Voice Selector
 voice_dict = {}
 if selected_language:
   available_voices_in_lang = lang_groups.get(selected_language, [])
@@ -226,45 +300,50 @@ if st.button(
   elif not selected_language or not voice_id:
     st.warning("Please select both a Language and a Voice first.")
   else:
-    with st.spinner("Generating audio and export formats..."):
-      audio_file, srt_file, txt_file = loop.run_until_complete(
-          generate_tts(
-              text_input, voice_id, rate_val, pitch_val, generate_srt
-          )
-      )
+    try:
+      with st.spinner("Generating audio and export formats..."):
+        audio_file, srt_file, txt_file = loop.run_until_complete(
+            generate_tts(
+                text_input, voice_id, rate_val, pitch_val, generate_srt
+            )
+        )
 
-      st.success("Success! Audio and files generated successfully.")
+        st.success("Success! Audio and files generated successfully.")
 
-      # Play Audio
-      st.audio(audio_file, format="audio/mp3")
+        # Play Audio
+        st.audio(audio_file, format="audio/mp3")
 
-      st.markdown("### 📥 Download Export Formats")
-      dcol1, dcol2, dcol3 = st.columns(3)
+        st.markdown("### 📥 Download Export Formats")
+        dcol1, dcol2, dcol3 = st.columns(3)
 
-      with dcol1:
-        with open(audio_file, "rb") as f:
-          st.download_button(
-              label="📥 Download MP3",
-              data=f,
-              file_name="vexon_output.mp3",
-              mime="audio/mp3",
-          )
-
-      with dcol2:
-        with open(txt_file, "r", encoding="utf-8") as f:
-          st.download_button(
-              label="📥 Download Script TXT",
-              data=f,
-              file_name="vexon_script.txt",
-              mime="text/plain",
-          )
-
-      with dcol3:
-        if srt_file:
-          with open(srt_file, "r", encoding="utf-8") as f:
+        with dcol1:
+          with open(audio_file, "rb") as f:
             st.download_button(
-                label="📥 Download Subtitles SRT",
+                label="📥 Download MP3",
                 data=f,
-                file_name="vexon_subtitles.srt",
+                file_name="vexon_output.mp3",
+                mime="audio/mp3",
+            )
+
+        with dcol2:
+          with open(txt_file, "r", encoding="utf-8") as f:
+            st.download_button(
+                label="📥 Download Script TXT",
+                data=f,
+                file_name="vexon_script.txt",
                 mime="text/plain",
             )
+
+        with dcol3:
+          if srt_file:
+            with open(srt_file, "r", encoding="utf-8") as f:
+              st.download_button(
+                  label="📥 Download Subtitles SRT",
+                  data=f,
+                  file_name="vexon_subtitles.srt",
+                  mime="text/plain",
+              )
+    except Exception:
+      st.error(
+          "Service is temporarily busy. Please try again in a few seconds."
+      )
