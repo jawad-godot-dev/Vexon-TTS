@@ -22,34 +22,29 @@ asyncio.set_event_loop(loop)
 all_voices = loop.run_until_complete(get_all_voices())
 
 
-# Format voices cleanly: Language (Country) - Voice Name (Gender)
-def clean_voice_display(v):
-  locale = v.get("Locale", "")  # e.g., ur-PK
-  gender = v.get("Gender", "Unknown")
-  short_name = v.get("ShortName", "")  # e.g., ur-PK-AsadNeural
-  friendly = v.get("FriendlyName", "")  # e.g., Microsoft Asad (Urdu, Pakistan)
+# Group voices by Language & Country
+def get_language_country_groups(voices):
+  groups = {}
+  for v in voices:
+    friendly = v.get("FriendlyName", "")
+    locale = v.get("Locale", "")
 
-  # Extract voice name cleanly
-  parts = short_name.split("-")
-  voice_name = parts[-1].replace("Neural", "") if len(parts) >= 3 else "Voice"
+    # Clean language and country name from FriendlyName
+    if "(" in friendly and ")" in friendly:
+      start = friendly.find("(")
+      end = friendly.rfind(")")
+      lang_country = friendly[start + 1 : end]
+    else:
+      lang_country = locale
 
-  # Extract Language and Country details cleanly from FriendlyName or Locale
-  if "(" in friendly and ")" in friendly:
-    # e.g. "Microsoft Asad (Urdu, Pakistan)" -> extracts "(Urdu, Pakistan)"
-    start = friendly.find("(")
-    end = friendly.rfind(")")
-    lang_country = friendly[start + 1 : end]
-  else:
-    lang_country = locale
-
-  return f"{lang_country} - {voice_name} ({gender})"
+    if lang_country not in groups:
+      groups[lang_country] = []
+    groups[lang_country].append(v)
+  return groups
 
 
-# Prepare rich list of voices with clean display names
-voice_options = []
-for v in all_voices:
-  display_name = clean_voice_display(v)
-  voice_options.append({"display": display_name, "id": v["ShortName"], "raw": v})
+lang_groups = get_language_country_groups(all_voices)
+sorted_languages = sorted(list(lang_groups.keys()))
 
 
 # Async function for Edge TTS generation
@@ -136,40 +131,51 @@ text_input = st.text_area(
     height=150,
 )
 
-# Search System with Search Button
-st.markdown("### 🔍 Global Voice & Language Search")
+st.markdown("### 🌐 Voice & Language Selection")
 
-col_search, col_btn = st.columns([3, 1])
-with col_search:
-  search_query = st.text_input(
-      "Search by Language, Country, or Voice Name",
-      value="",
-      placeholder="e.g. Urdu, Jenny, Asad...",
-      label_visibility="collapsed",
-  )
-with col_btn:
-  search_clicked = st.button(
-      "🔎 Search", use_container_width=True, type="secondary"
-  )
-
-# Filter options based on search query
-if search_query.strip():
-  query = search_query.lower()
-  filtered_options = [
-      opt for opt in voice_options if query in opt["display"].lower()
-  ]
-  if not filtered_options:
-    filtered_options = voice_options
-    st.warning("No matching voices found. Showing all voices.")
-else:
-  filtered_options = voice_options
-
-# Dropdown showing clean results
-display_to_id = {opt["display"]: opt["id"] for opt in filtered_options}
-selected_display_name = st.selectbox(
-    "Select Voice & Language Result", list(display_to_id.keys())
+# Enhanced Smart Search (ignores spaces/special characters for flexible matching like "English Australia")
+search_query = st.text_input(
+    "🔍 Smart Search Language / Country (e.g. English Australia, Urdu, Arabic)",
+    "",
 )
-voice_id = display_to_id[selected_display_name]
+
+if search_query.strip():
+  # Clean query by removing spaces and punctuation for flexible matching
+  clean_query = "".join(search_query.lower().split())
+  matched_languages = []
+  for lang in sorted_languages:
+    clean_lang = "".join(lang.lower().split())
+    if clean_query in clean_lang:
+      matched_languages.append(lang)
+
+  if not matched_languages:
+    matched_languages = sorted_languages
+    st.warning("No exact match found. Showing all languages.")
+else:
+  matched_languages = sorted_languages
+
+# Tab 1: Language & Country Selector
+selected_language = st.selectbox(
+    "1️⃣ Select Language & Country", matched_languages
+)
+
+# Tab 2: Voices corresponding to the selected Language & Country
+available_voices_in_lang = lang_groups.get(selected_language, [])
+
+voice_dict = {}
+for v in available_voices_in_lang:
+  short_name = v.get("ShortName", "")
+  parts = short_name.split("-")
+  voice_name = parts[-1].replace("Neural", "") if len(parts) >= 3 else "Voice"
+  gender = v.get("Gender", "Unknown")
+
+  display_label = f"{voice_name} ({gender})"
+  voice_dict[display_label] = v["ShortName"]
+
+selected_voice_label = st.selectbox(
+    "2️⃣ Select Specific Voice & Gender", list(voice_dict.keys())
+)
+voice_id = voice_dict[selected_voice_label]
 
 col1, col2 = st.columns(2)
 with col1:
